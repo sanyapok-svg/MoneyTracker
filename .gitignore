@@ -1,0 +1,10 @@
+node_modules
+.next
+out
+.env*.local
+.vercel
+.DS_Store
+*.log
+
+# Task Master
+.taskmaster/reports

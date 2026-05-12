@@ -1,0 +1,252 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Скелет приложения Next.js 16 + Tailwind 4 + shadcn/ui",
+        "description": "Инициализировать проект по стеку из PRD и папкам src/app, src/components, src/lib.",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "details": "Next.js 16 App Router, TypeScript, Tailwind CSS 4. Подключить shadcn/ui (Card, Input, Button, Form). Создать заготовки: layout.tsx, globals.css, пустые balance-summary, transaction-form, transaction-list. Без логики Supabase пока не требуется.",
+        "testStrategy": "npm run dev открывается, layouts без ошибок, UI-компоненты импортируются.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "create-next-app и зависимости",
+            "description": "Проект, TypeScript, ESLint, структура src/",
+            "status": "done",
+            "dependencies": [],
+            "details": "Убедиться, что версии совместимы с PRD (Next 16, Tailwind 4).",
+            "parentId": "undefined",
+            "updatedAt": "2026-05-12T17:07:18.987Z"
+          },
+          {
+            "id": 2,
+            "title": "shadcn init и базовые ui",
+            "description": "Card, Input, Button, Form в components/ui",
+            "status": "done",
+            "dependencies": [
+              1
+            ],
+            "details": "Следовать официальной схеме shadcn для App Router.",
+            "parentId": "undefined",
+            "updatedAt": "2026-05-12T17:07:33.209Z"
+          },
+          {
+            "id": 3,
+            "title": "Заглушки компонентов по PRD",
+            "description": "balance-summary, transaction-form, transaction-list",
+            "status": "done",
+            "dependencies": [
+              2
+            ],
+            "details": "Экспорт компонентов, подключить на page.tsx минимальную разметку.",
+            "parentId": "undefined",
+            "updatedAt": "2026-05-12T17:07:47.134Z"
+          }
+        ],
+        "updatedAt": "2026-05-12T17:07:47.134Z"
+      },
+      {
+        "id": "2",
+        "title": "Подключение Supabase (@supabase/ssr)",
+        "description": "Клиенты browser/server и middleware для сессии.",
+        "status": "done",
+        "dependencies": [
+          "1"
+        ],
+        "priority": "high",
+        "details": "Переменные окружения NEXT_PUBLIC_SUPABASE_URL и NEXT_PUBLIC_SUPABASE_ANON_KEY. lib/supabase/client.ts (createBrowserClient), server.ts (createServerClient). middleware.ts для обновления сессии. Не использовать @supabase/auth-helpers-nextjs.",
+        "testStrategy": "Сборка без ошибок; серверный клиент создаётся в Server Component без падения.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Экземпляр проекта Supabase и .env.local",
+            "description": "Ключи в env, пример в .env.example без секретов",
+            "status": "done",
+            "dependencies": [],
+            "details": "Документировать, что Service Role не попадает в браузер.",
+            "parentId": "undefined",
+            "updatedAt": "2026-05-12T17:49:43.540Z"
+          },
+          {
+            "id": 2,
+            "title": "Реализация client.ts и server.ts",
+            "description": "Два фабричных метода по документации @supabase/ssr",
+            "status": "done",
+            "dependencies": [
+              1
+            ],
+            "details": "Типы без any.",
+            "parentId": "undefined",
+            "updatedAt": "2026-05-12T17:15:44.228Z"
+          },
+          {
+            "id": 3,
+            "title": "middleware.ts",
+            "description": "Обновление сессии по гайду Supabase SSR",
+            "status": "done",
+            "dependencies": [
+              2
+            ],
+            "details": "matcher исключает статику по рекомендациям пакета.",
+            "parentId": "undefined",
+            "updatedAt": "2026-05-12T17:15:44.256Z"
+          }
+        ],
+        "updatedAt": "2026-05-12T17:49:43.540Z"
+      },
+      {
+        "id": "3",
+        "title": "Таблица transactions, RLS, тестовые данные",
+        "description": "Схема БД как в PRD + политики для учебного открытого доступа.",
+        "status": "done",
+        "dependencies": [
+          "2"
+        ],
+        "priority": "high",
+        "details": "Поля: id int8 PK, amount numeric(10,2), type text (income|expense), category text, description text nullable, date date, created_at timestamptz. RLS включить: SELECT/INSERT/UPDATE/DELETE разрешены всем (как в PRD). Добавить ≥5 тестовых строк.",
+        "testStrategy": "В Supabase Table Editor видны строки; SELECT из SQL Editor работает.",
+        "subtasks": [],
+        "updatedAt": "2026-05-12T18:00:04.455Z"
+      },
+      {
+        "id": "4",
+        "title": "Чтение транзакций на главной (READ)",
+        "description": "Server Component загружает данные из Supabase и рендерит таблицу.",
+        "status": "done",
+        "dependencies": [
+          "3"
+        ],
+        "priority": "high",
+        "details": "lib/types.ts — тип Transaction. transaction-list.tsx: колонки дата, тип, категория, описание, сумма; доход зелёным, расход красным. Пустое состояние с CTA «Добавить первую», если строк нет.",
+        "testStrategy": "Главная показывает тестовые записи из БД; цвета типов корректны.",
+        "subtasks": [],
+        "updatedAt": "2026-05-12T17:15:44.272Z"
+      },
+      {
+        "id": "5",
+        "title": "BalanceSummary — доходы, расходы, баланс за месяц",
+        "description": "Три карточки над таблицей с форматированием «65 000 ₽».",
+        "status": "done",
+        "dependencies": [
+          "4"
+        ],
+        "priority": "medium",
+        "details": "Считать по текущему календарному месяцу (или явно задать правило в коде и зафиксировать). Баланс = доходы − расходы. Разделители тысяч, валюта ₽.",
+        "testStrategy": "Суммы совпадают с ручным пересчётом по тестовым данным за выбранный месяц.",
+        "subtasks": [],
+        "updatedAt": "2026-05-12T17:15:44.298Z"
+      },
+      {
+        "id": "6",
+        "title": "Добавление транзакции (CREATE + Server Action)",
+        "description": "addTransaction, zod, форма, revalidatePath('/')",
+        "status": "done",
+        "dependencies": [
+          "4"
+        ],
+        "priority": "high",
+        "details": "app/actions.ts: addTransaction. Поля: type radio, amount number min 1, category select из фиксированного списка PRD, description optional max 280, date default сегодня. Валидация zod на сервере; на клиенте через те же схемы где уместно. После успеха revalidatePath('/'). UI: dialog или отдельная страница — по выбору.",
+        "testStrategy": "Новая строка появляется в таблице и влияет на BalanceSummary без ручного обновления.",
+        "subtasks": [],
+        "updatedAt": "2026-05-12T17:15:44.309Z"
+      },
+      {
+        "id": "7",
+        "title": "Удаление транзакции (DELETE)",
+        "description": "deleteTransaction(id), confirm, иконка в строке",
+        "status": "done",
+        "dependencies": [
+          "6"
+        ],
+        "priority": "medium",
+        "details": "Server Action deleteTransaction. Перед вызовом browser confirm «Точно удалить?». revalidatePath('/') после успеха.",
+        "testStrategy": "Запись исчезает из UI и из БД.",
+        "subtasks": [],
+        "updatedAt": "2026-05-12T17:15:44.319Z"
+      },
+      {
+        "id": "8",
+        "title": "Редактирование транзакции (UPDATE)",
+        "description": "updateTransaction, та же форма с предзаполнением",
+        "status": "done",
+        "dependencies": [
+          "6",
+          "7"
+        ],
+        "priority": "medium",
+        "details": "Клик по строке открывает форму с данными. Server Action updateTransaction(id, data). zod + revalidatePath.",
+        "testStrategy": "Изменения сохраняются и отображаются в таблице и в расчётах баланса.",
+        "subtasks": [],
+        "updatedAt": "2026-05-12T17:15:44.331Z"
+      },
+      {
+        "id": "9",
+        "title": "Фильтрация по типу (бонус)",
+        "description": "URL ?type=income|expense и кнопки Все / Доходы / Расходы",
+        "status": "done",
+        "dependencies": [
+          "4"
+        ],
+        "priority": "low",
+        "details": "Server Component читает searchParams, фильтрует запрос к Supabase. Ссылки или форма с переходом на те же URL.",
+        "testStrategy": "При смене фильтра список и агрегаты (если задокументировано) соответствуют фильтру.",
+        "subtasks": [],
+        "updatedAt": "2026-05-12T17:15:44.341Z"
+      },
+      {
+        "id": "10",
+        "title": "REST: GET /api/transactions",
+        "description": "Параллельный путь к Server Actions для сравнения подходов.",
+        "status": "done",
+        "dependencies": [
+          "3"
+        ],
+        "priority": "medium",
+        "details": "Route Handler возвращает JSON списка транзакций. Не использовать service role; только публичные/anon правила как в RLS.",
+        "testStrategy": "GET возвращает 200 и массив в форме, согласованной с типом Transaction.",
+        "subtasks": [],
+        "updatedAt": "2026-05-12T17:15:44.352Z"
+      },
+      {
+        "id": "11",
+        "title": "Проверка CRUD через Thunder Client",
+        "description": "Прогон API и ручная проверка UI по чек-листу PRD",
+        "status": "done",
+        "dependencies": [
+          "8",
+          "10"
+        ],
+        "priority": "medium",
+        "details": "Документировать запросы (GET и при наличии POST/PATCH/DELETE для route). Проверить коды ответов. Пройти сценарии добавить/изменить/удалить в браузере.",
+        "testStrategy": "Чек-лист сохранён; все операции дают ожидаемые статусы и данные.",
+        "subtasks": [],
+        "updatedAt": "2026-05-12T18:01:46.248Z"
+      },
+      {
+        "id": "12",
+        "title": "Деплой на Vercel",
+        "description": "Env Supabase в проекте Vercel, деплой из main",
+        "status": "pending",
+        "dependencies": [
+          "11"
+        ],
+        "priority": "medium",
+        "details": "Перенести NEXT_PUBLIC_* и любые секреты согласно практике Vercel. Убедиться, что прод подключается к той же БД (или отдельный инстанс).",
+        "testStrategy": "Сайт на *.vercel.app открывается, CRUD работает против прод-БД.",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-05-12T18:01:46.249Z",
+      "taskCount": 12,
+      "completedCount": 11,
+      "tags": [
+        "master"
+      ]
+    }
+  }
+}
