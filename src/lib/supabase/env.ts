@@ -27,3 +27,9 @@ export function requireSupabaseEnv(): SupabaseEnv {
   }
   return env;
 }
+
+/** Секретный ключ (service_role) только для сервера — Admin API, не для клиента. */
+export function getSupabaseServiceRoleKey(): string | undefined {
+  const k = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  return k || undefined;
+}

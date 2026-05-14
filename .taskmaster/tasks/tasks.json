@@ -237,13 +237,127 @@
         "details": "Перенести NEXT_PUBLIC_* и любые секреты согласно практике Vercel. Убедиться, что прод подключается к той же БД (или отдельный инстанс).",
         "testStrategy": "Сайт на *.vercel.app открывается, CRUD работает против прод-БД.",
         "subtasks": []
+      },
+      {
+        "id": "13",
+        "title": "Supabase Auth: Email и redirect URLs",
+        "description": "Включить Email-провайдер, подтверждение почты, Site URL и Redirect URLs для OAuth.",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "details": "В Supabase Dashboard: Authentication → Providers → Email включён; при необходимости настроить Confirm email. Authentication → URL Configuration: Site URL (localhost для dev, Vercel URL для prod), Additional Redirect URLs для OAuth callback (например http://localhost:3000/auth/callback и https://<project>.vercel.app/auth/callback). Не использовать service role в браузере.",
+        "testStrategy": "Тестовая регистрация создаёт пользователя; письмо подтверждения приходит (или отключено в dev по настройке проекта).",
+        "subtasks": [],
+        "updatedAt": "2026-05-14T17:13:03.638Z"
+      },
+      {
+        "id": "14",
+        "title": "Проверка @supabase/ssr и env для Auth",
+        "description": "Клиенты browser/server и переменные окружения готовы к signIn/signUp.",
+        "status": "done",
+        "dependencies": [
+          "2",
+          "13"
+        ],
+        "priority": "high",
+        "details": "Убедиться, что createBrowserClient/createServerClient из PRD-2 совместимы с текущим кодом (lib/supabase/env.ts, client.ts, server.ts). Для OAuth callback понадобится обмен code на сессию через createServerClient в Route Handler.",
+        "testStrategy": "npm run build без ошибок; createSupabaseServerClient() в Server Component не падает при заданных env.",
+        "subtasks": [],
+        "updatedAt": "2026-05-14T17:13:03.657Z"
+      },
+      {
+        "id": "15",
+        "title": "Сессия: updateSession в proxy (Next.js 16)",
+        "description": "Обновление сессии Supabase на каждом запросе по паттерну Supabase SSR.",
+        "status": "done",
+        "dependencies": [
+          "14"
+        ],
+        "priority": "high",
+        "details": "PRD-2 упоминает src/middleware.ts — в этом проекте используется src/proxy.ts (конвенция Next.js 16). Реализовать или усилить паттерн updateSession: createServerClient + getUser + setAll cookies. Matcher исключает статику и _next. Не ломать существующие публичные страницы до появления защиты (задача 19).",
+        "testStrategy": "После входа cookie сессии обновляются; повторный запрос к / видит залогиненного пользователя.",
+        "subtasks": [],
+        "updatedAt": "2026-05-14T17:13:03.667Z"
+      },
+      {
+        "id": "16",
+        "title": "Регистрация: /register + signUp",
+        "description": "Страница регистрации и Server Action signUp с zod.",
+        "status": "done",
+        "dependencies": [
+          "15"
+        ],
+        "priority": "high",
+        "details": "Маршрут app/(auth)/register/page.tsx (или app/register). Форма: email, пароль, подтверждение пароля. zod: пароль ≥ 8, совпадение. Вызов supabase.auth.signUp({ email, password }). После отправки — UI «Проверьте почту». Server Actions в app/actions/auth.ts (или отдельный файл по PRD-2).",
+        "testStrategy": "Регистрация создаёт пользователя в Supabase Auth; при включённом confirm — сообщение на экране.",
+        "subtasks": [],
+        "updatedAt": "2026-05-14T17:13:03.675Z"
+      },
+      {
+        "id": "17",
+        "title": "Вход: /login + signIn и «Выйти» в шапке",
+        "description": "Страница входа, signInWithPassword, signOut, сообщения об ошибках.",
+        "status": "done",
+        "dependencies": [
+          "15",
+          "16"
+        ],
+        "priority": "high",
+        "details": "app/(auth)/login/page.tsx. Форма email + пароль. Server Action signIn → signInWithPassword; при успехе redirect на /. Ошибки — текст под формой. Кнопка «Выйти» в layout/header: signOut + redirect. Уже залогиненный на /login или /register → redirect на /.",
+        "testStrategy": "Вход под тестовым пользователем; выход очищает сессию; редиректы соответствуют PRD.",
+        "subtasks": [],
+        "updatedAt": "2026-05-14T17:13:03.789Z"
+      },
+      {
+        "id": "18",
+        "title": "Social Login: Google и GitHub + auth/callback",
+        "description": "OAuth-кнопки на login/register и Route Handler callback.",
+        "status": "done",
+        "dependencies": [
+          "17"
+        ],
+        "priority": "medium",
+        "details": "Включить провайдеры в Supabase (Google, GitHub). Компонент components/auth/social-buttons.tsx. signInWithOAuth({ provider, options: { redirectTo: .../auth/callback } }). app/auth/callback/route.ts: обмен code на сессию через createServerClient (паттерн Supabase Next.js).",
+        "testStrategy": "Вход через Google и GitHub доходит до / с валидной сессией.",
+        "subtasks": [],
+        "updatedAt": "2026-05-14T17:13:03.798Z"
+      },
+      {
+        "id": "19",
+        "title": "Защита страниц с транзакциями",
+        "description": "Незалогиненный не видит дашборд; залогиненный не видит /login как гостя.",
+        "status": "done",
+        "dependencies": [
+          "17",
+          "18"
+        ],
+        "priority": "high",
+        "details": "В src/proxy.ts (или эквивалент): для путей /, /api/transactions (и при необходимости других) проверять сессию; без пользователя — redirect на /login. Для /login и /register при наличии сессии — redirect на /. Исключить статические ассеты и auth/callback из блокировки.",
+        "testStrategy": "Инкогнито: / → /login. После входа: / открывается. Залогиненный /login → /.",
+        "subtasks": [],
+        "updatedAt": "2026-05-14T17:13:03.914Z"
+      },
+      {
+        "id": "20",
+        "title": "user_id на transactions + RLS по auth.uid()",
+        "description": "Колонка user_id, Server Actions только из сессии, политики RLS вместо открытого доступа.",
+        "status": "done",
+        "dependencies": [
+          "19",
+          "3"
+        ],
+        "priority": "high",
+        "details": "Миграция: ADD COLUMN user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE (или SET NULL по решению); бэкфилл для существующих строк — отдельная политика одноразово или удаление тестовых данных в dev. INSERT/UPDATE в actions: user_id только из supabase.auth.getUser(), никогда из формы. RLS: SELECT/INSERT/UPDATE/DELETE с USING/WITH CHECK (auth.uid() = user_id). Удалить старые политики «для всех» из модуля 6.",
+        "testStrategy": "Пользователь A не видит транзакции B в UI и через REST/PostgREST с anon key.",
+        "subtasks": [],
+        "updatedAt": "2026-05-14T17:13:03.924Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-05-12T18:01:46.249Z",
-      "taskCount": 12,
-      "completedCount": 11,
+      "lastModified": "2026-05-14T17:13:03.925Z",
+      "taskCount": 20,
+      "completedCount": 19,
       "tags": [
         "master"
       ]

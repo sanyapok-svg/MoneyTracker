@@ -25,4 +25,6 @@ export type TransactionInput = z.infer<typeof transactionInputSchema>;
 export type Transaction = TransactionInput & {
   id: number;
   created_at: string;
+  /** Появляется после миграции 0002; в SELECT не обязателен для UI */
+  user_id?: string;
 };

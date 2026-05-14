@@ -1,5 +1,5 @@
-import { AddTransactionDialog } from "@/components/add-transaction-dialog";
 import { BalanceSummary } from "@/components/balance-summary";
+import { DashboardHeader } from "@/components/dashboard-header";
 import { SetupNotice } from "@/components/setup-notice";
 import { TransactionFilters } from "@/components/transaction-filters";
 import { TransactionList } from "@/components/transaction-list";
@@ -83,15 +83,7 @@ export default async function HomePage({
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main className="mx-auto max-w-5xl space-y-8 px-4 py-10">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold">Money Tracker</h1>
-          <p className="text-sm text-muted-foreground">
-            Личный учёт доходов и расходов
-          </p>
-        </div>
-        <AddTransactionDialog />
-      </header>
+      <DashboardHeader />
       {children}
     </main>
   );

@@ -42,9 +42,16 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Требуется вход" }, { status: 401 });
+  }
+
   const { data, error } = await supabase
     .from("transactions")
-    .insert(parsed.data)
+    .insert({ ...parsed.data, user_id: user.id })
     .select()
     .single();
 
