@@ -168,17 +168,20 @@ export default async function HomePage({
 
       {!legacySchema && rates != null ? (
         <>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Валюта отображения</p>
-              <CurrencySwitcher
-                current={displayCurrency}
-                filter={filter}
-                hasPaidConversion={hasPaidConversion}
-                stripeEnabled={stripeEnabled}
-              />
-            </div>
-          </div>
+          <section className="w-full space-y-3" aria-labelledby="display-currency-heading">
+            <h2
+              id="display-currency-heading"
+              className="text-sm font-medium"
+            >
+              Валюта отображения
+            </h2>
+            <CurrencySwitcher
+              current={displayCurrency}
+              filter={filter}
+              hasPaidConversion={hasPaidConversion}
+              stripeEnabled={stripeEnabled}
+            />
+          </section>
 
           <BalanceSummary
             income={totals.income}
