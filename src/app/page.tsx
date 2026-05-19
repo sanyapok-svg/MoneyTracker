@@ -79,7 +79,7 @@ export default async function HomePage({
     }
   }
 
-  let subscription = user ? await getUserSubscription(user.id) : null;
+  const subscription = user ? await getUserSubscription(user.id) : null;
   const hasPaidConversion = hasPaidConversionAccess(subscription);
   const displayCurrency = resolveDisplayCurrency(
     sp.display,
@@ -162,8 +162,9 @@ export default async function HomePage({
             Погода временно недоступна. Проверьте подключение к интернету.
           </div>
         )}
-        {!legacySchema ? <WalletsSummary wallets={wallets} /> : null}
       </div>
+
+      {!legacySchema ? <WalletsSummary wallets={wallets} /> : null}
 
       {!legacySchema && rates != null ? (
         <>

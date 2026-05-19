@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import type { SubscriptionDisplay } from "@/lib/subscriptions";
 
 export type AdminUserListItem = {
   id: string;
@@ -6,15 +7,20 @@ export type AdminUserListItem = {
   created_at: string;
   banned_until?: string | null;
   last_sign_in_at?: string | null;
+  subscription: SubscriptionDisplay;
 };
 
-export function toAdminUserListItem(user: User): AdminUserListItem {
+export function toAdminUserListItem(
+  user: User,
+  subscription: SubscriptionDisplay,
+): AdminUserListItem {
   return {
     id: user.id,
     email: user.email ?? null,
     created_at: user.created_at,
     banned_until: user.banned_until ?? null,
     last_sign_in_at: user.last_sign_in_at ?? null,
+    subscription,
   };
 }
 

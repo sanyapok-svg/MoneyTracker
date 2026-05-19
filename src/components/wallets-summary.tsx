@@ -11,7 +11,7 @@ export function WalletsSummary({ wallets }: Props) {
   const byCur = Object.fromEntries(wallets.map((w) => [w.currency, w]));
 
   return (
-    <section aria-label="Кошельки" className="space-y-2">
+    <section aria-label="Кошельки" className="space-y-3">
       <h2 className="text-sm font-medium text-muted-foreground">Кошельки</h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {CURRENCIES.map((currency) => {
@@ -23,11 +23,11 @@ export function WalletsSummary({ wallets }: Props) {
                   {currency}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-lg font-semibold tabular-nums">
+              <CardContent className="space-y-1">
+                <p className="text-base font-semibold leading-tight tabular-nums sm:text-lg">
                   {formatMoney(balance, currency)}
                 </p>
-                <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                <p className="text-xs leading-snug text-muted-foreground">
                   {CURRENCY_LABELS[currency]}
                 </p>
               </CardContent>

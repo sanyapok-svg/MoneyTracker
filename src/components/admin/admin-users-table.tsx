@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { AdminUserListItem } from "@/lib/admin";
 import { isUserBanned } from "@/lib/admin";
+import { SubscriptionBadge } from "@/components/subscription-badge";
 import { formatDate } from "@/lib/format";
 
 type Props = {
@@ -38,13 +39,14 @@ export function AdminUsersTable({ users, currentUserId }: Props) {
 
   return (
     <div className="overflow-x-auto rounded-xl border">
-      <table className="w-full min-w-[640px] text-sm">
+      <table className="w-full min-w-[760px] text-sm">
         <thead className="bg-muted/40">
           <tr className="text-left">
             <th className="px-3 py-2 font-medium">Email</th>
             <th className="px-3 py-2 font-medium">Регистрация</th>
             <th className="px-3 py-2 font-medium">Последний вход</th>
             <th className="px-3 py-2 font-medium">Статус</th>
+            <th className="px-3 py-2 font-medium">Подписка RUB/KZT</th>
             <th className="px-3 py-2 font-medium">ID</th>
             <th className="px-3 py-2 text-right font-medium">Действия</th>
           </tr>
@@ -68,6 +70,9 @@ export function AdminUsersTable({ users, currentUserId }: Props) {
                   ) : (
                     <span className="text-muted-foreground">Активен</span>
                   )}
+                </td>
+                <td className="px-3 py-2">
+                  <SubscriptionBadge subscription={u.subscription} />
                 </td>
                 <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
                   {u.id.slice(0, 8)}…

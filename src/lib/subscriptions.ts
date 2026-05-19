@@ -38,6 +38,89 @@ export function hasPaidConversionAccess(
   return isSubscriptionActive(sub);
 }
 
+export type SubscriptionDisplay = {
+  active: boolean;
+  label: string;
+  detail: string | null;
+  status: string | null;
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  active: "Оплачена",
+  trialing: "Пробный период",
+  canceled: "Отменена",
+  past_due: "Просрочена",
+  unpaid: "Не оплачена",
+  incomplete: "Не завершена",
+  incomplete_expired: "Истекла",
+  paused: "Приостановлена",
+};
+
+export function getSubscriptionDisplay(
+  sub: CurrencySubscription | null | undefined,
+): SubscriptionDisplay {
+  if (!sub || sub.status === "inactive") {
+    return { active: false, label: "Нет", detail: null, status: null };
+  }
+
+  if (isSubscriptionActive(sub)) {
+    return {
+      active: true,
+      label: STATUS_LABELS[sub.status] ?? "Оплачена",
+      detail: sub.currentPeriodEnd
+        ? `до ${formatSubscriptionDate(sub.currentPeriodEnd)}`
+        : null,
+      status: sub.status,
+    };
+  }
+
+  return {
+    active: false,
+    label: STATUS_LABELS[sub.status] ?? sub.status,
+    detail: sub.currentPeriodEnd
+      ? `период до ${formatSubscriptionDate(sub.currentPeriodEnd)}`
+      : null,
+    status: sub.status,
+  };
+}
+
+function formatSubscriptionDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return new Intl.DateTimeFormat("ru-RU", {
+    timeZone: "Europe/Minsk",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(d);
+}
+
+export async function listSubscriptionsForUserIds(
+  userIds: string[],
+): Promise<Map<string, CurrencySubscription>> {
+  const map = new Map<string, CurrencySubscription>();
+  if (userIds.length === 0) return map;
+  if (!getSupabaseServiceRoleKey()) return map;
+
+  const admin = createSupabaseServiceRoleClient();
+  const { data, error } = await admin
+    .from(TABLE)
+    .select(
+      "user_id, stripe_customer_id, stripe_subscription_id, status, current_period_end",
+    )
+    .in("user_id", userIds);
+
+  if (error) {
+    if (error.code === "PGRST205" || error.code === "42P01") return map;
+    throw new Error(`Подписки: ${error.message}`);
+  }
+
+  for (const row of data ?? []) {
+    map.set(row.user_id, rowToSubscription(row));
+  }
+  return map;
+}
+
 function rowToSubscription(row: {
   user_id: string;
   stripe_customer_id: string | null;

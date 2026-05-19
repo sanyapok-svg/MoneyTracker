@@ -10,6 +10,10 @@ import {
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/admin";
 import { getSupabaseEnv, getSupabaseServiceRoleKey } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  getSubscriptionDisplay,
+  listSubscriptionsForUserIds,
+} from "@/lib/subscriptions";
 import { cn } from "@/lib/utils";
 
 type SearchParams = Promise<{ page?: string }>;
@@ -63,7 +67,15 @@ export default async function AdminPage({
       if (error) {
         listError = error.message;
       } else if (data) {
-        users = data.users.map(toAdminUserListItem);
+        const subMap = await listSubscriptionsForUserIds(
+          data.users.map((u) => u.id),
+        );
+        users = data.users.map((u) =>
+          toAdminUserListItem(
+            u,
+            getSubscriptionDisplay(subMap.get(u.id) ?? null),
+          ),
+        );
         lastPage = data.lastPage ?? 1;
         total = data.total ?? users.length;
       }
