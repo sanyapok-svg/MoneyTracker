@@ -16,6 +16,8 @@ function isPublicPath(pathname: string): boolean {
 
 function isProtectedPath(pathname: string): boolean {
   if (pathname.startsWith("/api/transactions")) return true;
+  if (pathname.startsWith("/api/stripe/checkout")) return true;
+  if (pathname.startsWith("/api/stripe/portal")) return true;
   if (pathname === "/") return true;
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
   return false;

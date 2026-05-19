@@ -39,6 +39,17 @@ git push -u origin main
 
 ### 3. Добавить env-переменные
 
+Для подписки RUB/KZT (Stripe, $5/мес) также добавьте:
+
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` — `pk_test_` / `pk_live_`
+- `STRIPE_SECRET_KEY` — `sk_test_` / `sk_live_`
+- `STRIPE_WEBHOOK_SECRET` — `whsec_...` из Stripe Dashboard → Webhooks
+- `STRIPE_PRICE_ID` — опционально; иначе `npm run setup:stripe` создаст цену
+
+Webhook на проде: `https://<домен>/api/stripe/webhook`, события
+`checkout.session.completed`, `customer.subscription.*`.
+
+
 В разделе **Environment Variables** проекта Vercel добавьте на все три окружения (Production, Preview, Development):
 
 | Имя | Значение |

@@ -2,11 +2,13 @@ import { BalanceSummary } from "@/components/balance-summary";
 import { CurrencySwitcher } from "@/components/currency-switcher";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { ExchangeRatesCard } from "@/components/exchange-rates-card";
+import { WeatherCard } from "@/components/weather-card";
 import { SetupNotice } from "@/components/setup-notice";
 import { TransactionFilters } from "@/components/transaction-filters";
 import { TransactionList } from "@/components/transaction-list";
 import { WalletsSummary } from "@/components/wallets-summary";
-import { buildRatesMap, parseDisplayCurrency } from "@/lib/currency";
+import { SubscriptionNotice } from "@/components/subscription-notice";
+import { buildRatesMap, resolveDisplayCurrency } from "@/lib/currency";
 import { getExchangeRatesSnapshot } from "@/lib/exchange-rates";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -18,9 +20,21 @@ import {
   type TransactionFilter,
 } from "@/lib/transactions";
 import { listWallets } from "@/lib/wallets";
+import { isStripeConfigured } from "@/lib/stripe";
+import {
+  getUserSubscription,
+  hasPaidConversionAccess,
+  syncCheckoutSession,
+} from "@/lib/subscriptions";
+import { getMinskWeather } from "@/lib/weather";
 import type { Transaction } from "@/lib/types";
 
-type SearchParams = Promise<{ type?: string; display?: string }>;
+type SearchParams = Promise<{
+  type?: string;
+  display?: string;
+  checkout?: string;
+  session_id?: string;
+}>;
 
 const VALID_FILTERS: TransactionFilter[] = ["all", "income", "expense"];
 
@@ -37,7 +51,12 @@ export default async function HomePage({
 }) {
   const sp = await searchParams;
   const filter = parseFilter(sp.type);
-  const displayCurrency = parseDisplayCurrency(sp.display);
+  const checkoutStatus =
+    sp.checkout === "success"
+      ? "success"
+      : sp.checkout === "canceled"
+        ? "canceled"
+        : null;
 
   if (!getSupabaseEnv()) {
     return (
@@ -52,11 +71,34 @@ export default async function HomePage({
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (sp.session_id && user && checkoutStatus === "success") {
+    try {
+      await syncCheckoutSession(sp.session_id, user.id);
+    } catch {
+      /* webhook догонит позже */
+    }
+  }
+
+  let subscription = user ? await getUserSubscription(user.id) : null;
+  const hasPaidConversion = hasPaidConversionAccess(subscription);
+  const displayCurrency = resolveDisplayCurrency(
+    sp.display,
+    hasPaidConversion,
+  );
+  const stripeEnabled = isStripeConfigured();
+
   let ratesSnapshot;
   try {
     ratesSnapshot = await getExchangeRatesSnapshot();
   } catch {
     ratesSnapshot = null;
+  }
+
+  let weather = null;
+  try {
+    weather = await getMinskWeather();
+  } catch {
+    weather = null;
   }
 
   let transactions: Transaction[] = [];
@@ -97,22 +139,31 @@ export default async function HomePage({
         <SetupNotice reason="missing-multi-currency" />
       ) : null}
 
-      {!legacySchema ? (
-        <div className="grid gap-6 lg:grid-cols-2">
-        {ratesSnapshot ? (
-          <ExchangeRatesCard
-            rates={ratesSnapshot.rates}
-            lastUpdated={ratesSnapshot.lastUpdated}
-            rateDate={ratesSnapshot.rateDate}
-          />
+      <SubscriptionNotice checkout={checkoutStatus} />
+
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        {!legacySchema ? (
+          ratesSnapshot ? (
+            <ExchangeRatesCard
+              rates={ratesSnapshot.rates}
+              lastUpdated={ratesSnapshot.lastUpdated}
+              rateDate={ratesSnapshot.rateDate}
+            />
+          ) : (
+            <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+              Курсы НБ РБ временно недоступны. Проверьте подключение к интернету.
+            </div>
+          )
+        ) : null}
+        {weather ? (
+          <WeatherCard weather={weather} />
         ) : (
           <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
-            Курсы НБ РБ временно недоступны. Проверьте подключение к интернету.
+            Погода временно недоступна. Проверьте подключение к интернету.
           </div>
         )}
-        <WalletsSummary wallets={wallets} />
-        </div>
-      ) : null}
+        {!legacySchema ? <WalletsSummary wallets={wallets} /> : null}
+      </div>
 
       {!legacySchema && rates != null ? (
         <>
@@ -122,6 +173,8 @@ export default async function HomePage({
               <CurrencySwitcher
                 current={displayCurrency}
                 filter={filter}
+                hasPaidConversion={hasPaidConversion}
+                stripeEnabled={stripeEnabled}
               />
             </div>
           </div>

@@ -2,6 +2,14 @@ export const CURRENCIES = ["BYN", "USD", "EUR", "RUB", "KZT"] as const;
 
 export type Currency = (typeof CURRENCIES)[number];
 
+/** Бесплатные валюты отображения / конвертации */
+export const FREE_DISPLAY_CURRENCIES = ["BYN", "USD", "EUR"] as const;
+
+/** Платные валюты отображения ($5/мес через Stripe) */
+export const PAID_DISPLAY_CURRENCIES = ["RUB", "KZT"] as const;
+
+export type PaidDisplayCurrency = (typeof PAID_DISPLAY_CURRENCIES)[number];
+
 /** Валюты с курсом НБ РБ (база — BYN) */
 export const NBRB_CURRENCIES = ["USD", "EUR", "RUB", "KZT"] as const;
 
@@ -22,6 +30,22 @@ export function isCurrency(value: string): value is Currency {
 export function parseDisplayCurrency(value: string | undefined): Currency {
   if (value && isCurrency(value)) return value;
   return "BYN";
+}
+
+export function isPaidDisplayCurrency(
+  currency: Currency,
+): currency is PaidDisplayCurrency {
+  return (PAID_DISPLAY_CURRENCIES as readonly string[]).includes(currency);
+}
+
+/** Учитывает подписку: RUB/KZT только при активной оплате */
+export function resolveDisplayCurrency(
+  requested: string | undefined,
+  hasPaidConversion: boolean,
+): Currency {
+  const parsed = parseDisplayCurrency(requested);
+  if (!isPaidDisplayCurrency(parsed)) return parsed;
+  return hasPaidConversion ? parsed : "BYN";
 }
 
 export type ExchangeRateRow = {
