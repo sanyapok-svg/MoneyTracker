@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isMissingCurrencyColumnError } from "@/lib/transactions";
+import { ensureUserWallets } from "@/lib/wallets";
 import { transactionInputSchema } from "@/lib/types";
 
 const TABLE = "transactions";
@@ -19,6 +21,7 @@ function parseFormData(formData: FormData) {
   const raw = {
     type: formData.get("type"),
     amount: Number(formData.get("amount")),
+    currency: formData.get("currency"),
     category: formData.get("category"),
     description: formData.get("description") || null,
     date: formData.get("date"),
@@ -40,6 +43,26 @@ function toErrorState(
   };
 }
 
+function mapDbError(error: { message: string; code?: string }): FormState {
+  if (isMissingCurrencyColumnError(error)) {
+    return {
+      status: "error",
+      message:
+        "Примените миграцию supabase/migrations/0003_multi_currency.sql в Supabase SQL Editor",
+    };
+  }
+  if (
+    error.message.includes("insufficient_wallet_funds") ||
+    error.message.includes("Недостаточно средств")
+  ) {
+    return {
+      status: "error",
+      message: "Недостаточно средств в кошельке выбранной валюты",
+    };
+  }
+  return { status: "error", message: `Supabase: ${error.message}` };
+}
+
 export async function addTransaction(
   _prev: FormState,
   formData: FormData,
@@ -55,11 +78,13 @@ export async function addTransaction(
     return { status: "error", message: "Сессия истекла. Войдите снова." };
   }
 
+  await ensureUserWallets(user.id);
+
   const { error } = await supabase
     .from(TABLE)
     .insert({ ...parsed.data, user_id: user.id });
   if (error) {
-    return { status: "error", message: `Supabase: ${error.message}` };
+    return mapDbError(error);
   }
 
   revalidatePath("/");
@@ -82,12 +107,14 @@ export async function updateTransaction(
     return { status: "error", message: "Сессия истекла. Войдите снова." };
   }
 
+  await ensureUserWallets(user.id);
+
   const { error } = await supabase
     .from(TABLE)
     .update(parsed.data)
     .eq("id", id);
   if (error) {
-    return { status: "error", message: `Supabase: ${error.message}` };
+    return mapDbError(error);
   }
 
   revalidatePath("/");
@@ -107,6 +134,9 @@ export async function deleteTransaction(id: number): Promise<void> {
   }
   const { error } = await supabase.from(TABLE).delete().eq("id", id);
   if (error) {
+    if (error.message.includes("insufficient_wallet_funds")) {
+      throw new Error("Недостаточно средств в кошельке для отмены операции");
+    }
     throw new Error(`Не удалось удалить транзакцию: ${error.message}`);
   }
   revalidatePath("/");

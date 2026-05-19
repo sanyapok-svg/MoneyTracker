@@ -6,8 +6,15 @@ import { Button } from "@/components/ui/button";
 import { AddTransactionDialog } from "@/components/add-transaction-dialog";
 import { deleteTransaction } from "@/app/actions";
 import type { Transaction } from "@/lib/types";
+import type { Wallet } from "@/lib/wallets";
 
-export function TransactionRowActions({ transaction }: { transaction: Transaction }) {
+export function TransactionRowActions({
+  transaction,
+  wallets,
+}: {
+  transaction: Transaction;
+  wallets: Wallet[];
+}) {
   const [pending, startTransition] = useTransition();
 
   function handleDelete() {
@@ -26,6 +33,7 @@ export function TransactionRowActions({ transaction }: { transaction: Transactio
     <div className="flex items-center justify-end gap-1">
       <AddTransactionDialog
         initial={transaction}
+        wallets={wallets}
         trigger={
           <Button
             type="button"

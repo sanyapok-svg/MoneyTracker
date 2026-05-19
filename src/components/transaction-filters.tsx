@@ -1,5 +1,7 @@
 import Link from "next/link";
+import type { Currency } from "@/lib/currency";
 import type { TransactionFilter } from "@/lib/transactions";
+import { homeUrl } from "@/lib/urls";
 
 const OPTIONS: { value: TransactionFilter; label: string }[] = [
   { value: "all", label: "Все" },
@@ -7,16 +9,21 @@ const OPTIONS: { value: TransactionFilter; label: string }[] = [
   { value: "expense", label: "Расходы" },
 ];
 
-export function TransactionFilters({ current }: { current: TransactionFilter }) {
+export function TransactionFilters({
+  current,
+  displayCurrency,
+}: {
+  current: TransactionFilter;
+  displayCurrency: Currency;
+}) {
   return (
     <nav className="inline-flex rounded-md border p-0.5" aria-label="Фильтры">
       {OPTIONS.map(({ value, label }) => {
         const active = value === current;
-        const href = value === "all" ? "/" : `/?type=${value}`;
         return (
           <Link
             key={value}
-            href={href}
+            href={homeUrl({ type: value, display: displayCurrency })}
             scroll={false}
             className={
               "rounded-sm px-3 py-1.5 text-sm transition-colors " +

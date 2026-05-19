@@ -23,6 +23,7 @@
 2. Создать проект в [Supabase](https://supabase.com/) и применить миграции в **Supabase Studio → SQL Editor**:
    - `supabase/migrations/0001_transactions.sql` — таблица `transactions` (модуль 6).
    - `supabase/migrations/0002_auth_user_id_rls.sql` — колонка `user_id`, RLS по `auth.uid()` (модуль 7; демо-строки без владельца удаляются).
+   - `supabase/migrations/0003_multi_currency.sql` — курсы НБ РБ, кошельки (BYN, USD, EUR, RUB, KZT), валюта транзакций.
 
 3. Настроить Auth в Supabase: [docs/SUPABASE_AUTH_SETUP.md](./docs/SUPABASE_AUTH_SETUP.md).
 
@@ -46,6 +47,13 @@
    ```
 
    Главная `/` доступна после входа (`/login`). Регистрация — `/register`.
+
+## Мультивалютность
+
+- Курсы **USD, EUR, RUB, KZT** с [API НБ РБ](https://www.nbrb.by/apihelp/exrates); обновление ежедневно в **09:00** (Europe/Minsk) и при открытии главной, если курс устарел.
+- На Vercel: cron `0 6 * * *` UTC → `/api/cron/exchange-rates` (см. `vercel.json`). Для сохранения курсов в БД нужен `SUPABASE_SERVICE_ROLE_KEY`.
+- Переключатель валюты отображения на главной (`?display=USD` и т.д.).
+- Кошельки по валютам: доход пополняет выбранный кошелёк, расход списывает с него.
 
 ## Структура
 

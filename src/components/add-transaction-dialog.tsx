@@ -12,13 +12,15 @@ import {
 } from "@/components/ui/dialog";
 import { TransactionForm } from "@/components/transaction-form";
 import type { Transaction } from "@/lib/types";
+import type { Wallet } from "@/lib/wallets";
 
 type Props = {
   initial?: Transaction;
+  wallets: Wallet[];
   trigger?: React.ReactElement;
 };
 
-export function AddTransactionDialog({ initial, trigger }: Props) {
+export function AddTransactionDialog({ initial, wallets, trigger }: Props) {
   const [open, setOpen] = useState(false);
   const isEdit = Boolean(initial);
 
@@ -31,10 +33,15 @@ export function AddTransactionDialog({ initial, trigger }: Props) {
             {isEdit ? "Изменить транзакцию" : "Новая транзакция"}
           </DialogTitle>
           <DialogDescription>
-            Заполните поля формы. Все суммы — в рублях.
+            Укажите валюту кошелька. Доход пополняет кошелёк, расход списывает
+            с него.
           </DialogDescription>
         </DialogHeader>
-        <TransactionForm initial={initial} onSuccess={() => setOpen(false)} />
+        <TransactionForm
+          initial={initial}
+          wallets={wallets}
+          onSuccess={() => setOpen(false)}
+        />
       </DialogContent>
     </Dialog>
   );

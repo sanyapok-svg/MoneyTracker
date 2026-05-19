@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,16 +16,24 @@ import {
   updateTransaction,
   type FormState,
 } from "@/app/actions";
+import {
+  CURRENCIES,
+  CURRENCY_LABELS,
+  type Currency,
+} from "@/lib/currency";
+import { formatMoney } from "@/lib/format";
 import { TRANSACTION_CATEGORIES, type Transaction } from "@/lib/types";
+import type { Wallet } from "@/lib/wallets";
 
 const INITIAL_STATE: FormState = { status: "idle" };
 
 type Props = {
   initial?: Transaction;
+  wallets: Wallet[];
   onSuccess?: () => void;
 };
 
-export function TransactionForm({ initial, onSuccess }: Props) {
+export function TransactionForm({ initial, wallets, onSuccess }: Props) {
   const action = initial
     ? updateTransaction.bind(null, initial.id)
     : addTransaction;
@@ -40,6 +48,18 @@ export function TransactionForm({ initial, onSuccess }: Props) {
   const fieldErrors =
     state.status === "error" ? (state.fieldErrors ?? {}) : {};
 
+  const balanceByCurrency = useMemo(() => {
+    const map = Object.fromEntries(
+      wallets.map((w) => [w.currency, w.balance]),
+    ) as Record<string, number>;
+    for (const c of CURRENCIES) {
+      if (map[c] === undefined) map[c] = 0;
+    }
+    return map as Record<Currency, number>;
+  }, [wallets]);
+
+  const defaultCurrency = (initial?.currency ?? "BYN") as Currency;
+
   return (
     <form action={formAction} className="grid gap-4" aria-label="Форма транзакции">
       <fieldset className="grid gap-2">
@@ -53,7 +73,7 @@ export function TransactionForm({ initial, onSuccess }: Props) {
               defaultChecked={initial?.type !== "expense"}
               required
             />
-            Доход
+            Доход (пополнение кошелька)
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -63,18 +83,37 @@ export function TransactionForm({ initial, onSuccess }: Props) {
               defaultChecked={initial?.type === "expense"}
               required
             />
-            Расход
+            Расход (списание с кошелька)
           </label>
         </div>
         <FieldError messages={fieldErrors.type} />
       </fieldset>
+
+      <Field label="Валюта" htmlFor="currency" error={fieldErrors.currency}>
+        <Select name="currency" defaultValue={defaultCurrency} required>
+          <SelectTrigger id="currency" className="w-full">
+            <SelectValue placeholder="Валюта" />
+          </SelectTrigger>
+          <SelectContent>
+            {CURRENCIES.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c} — {CURRENCY_LABELS[c]} (кошелёк:{" "}
+                {formatMoney(balanceByCurrency[c], c)})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          Доход зачисляется на кошелёк выбранной валюты, расход списывается с него.
+        </p>
+      </Field>
 
       <Field label="Сумма" htmlFor="amount" error={fieldErrors.amount}>
         <Input
           id="amount"
           type="number"
           name="amount"
-          min={1}
+          min={0.01}
           step="0.01"
           required
           defaultValue={initial?.amount}

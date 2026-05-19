@@ -1,12 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatRub } from "@/lib/format";
+import type { Currency } from "@/lib/currency";
+import { formatMoney } from "@/lib/format";
 
 type Props = {
   income: number;
   expense: number;
+  displayCurrency: Currency;
 };
 
-export function BalanceSummary({ income, expense }: Props) {
+export function BalanceSummary({ income, expense, displayCurrency }: Props) {
   const balance = income - expense;
 
   return (
@@ -14,11 +16,22 @@ export function BalanceSummary({ income, expense }: Props) {
       aria-label="Сводка за месяц"
       className="grid grid-cols-1 gap-4 sm:grid-cols-3"
     >
-      <SummaryCard label="Доходы за месяц" value={income} tone="income" />
-      <SummaryCard label="Расходы за месяц" value={expense} tone="expense" />
       <SummaryCard
-        label="Баланс"
+        label={`Доходы за месяц (${displayCurrency})`}
+        value={income}
+        currency={displayCurrency}
+        tone="income"
+      />
+      <SummaryCard
+        label={`Расходы за месяц (${displayCurrency})`}
+        value={expense}
+        currency={displayCurrency}
+        tone="expense"
+      />
+      <SummaryCard
+        label={`Баланс (${displayCurrency})`}
         value={balance}
+        currency={displayCurrency}
         tone={balance >= 0 ? "income" : "expense"}
       />
     </section>
@@ -28,10 +41,12 @@ export function BalanceSummary({ income, expense }: Props) {
 function SummaryCard({
   label,
   value,
+  currency,
   tone,
 }: {
   label: string;
   value: number;
+  currency: Currency;
   tone: "income" | "expense";
 }) {
   const color = tone === "income" ? "text-income" : "text-expense";
@@ -43,7 +58,9 @@ function SummaryCard({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className={`text-2xl font-semibold ${color}`}>{formatRub(value)}</div>
+        <p className={`text-2xl font-semibold tabular-nums ${color}`}>
+          {formatMoney(value, currency)}
+        </p>
       </CardContent>
     </Card>
   );

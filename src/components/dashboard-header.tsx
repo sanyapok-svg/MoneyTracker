@@ -4,6 +4,7 @@ import { SignOutForm } from "@/components/sign-out-form";
 import { buttonVariants } from "@/components/ui/button";
 import { isAdminUser } from "@/lib/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { listWallets } from "@/lib/wallets";
 import { cn } from "@/lib/utils";
 
 export async function DashboardHeader() {
@@ -13,6 +14,7 @@ export async function DashboardHeader() {
   } = await supabase.auth.getUser();
 
   const showAdmin = Boolean(user && isAdminUser(user));
+  const wallets = user ? await listWallets(user.id) : [];
 
   return (
     <header className="flex flex-wrap items-start justify-between gap-4">
@@ -36,7 +38,7 @@ export async function DashboardHeader() {
             Админка
           </Link>
         ) : null}
-        <AddTransactionDialog />
+        <AddTransactionDialog wallets={wallets} />
         <SignOutForm />
       </div>
     </header>
